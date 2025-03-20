@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Brain, BookOpen, Users, FolderHeart, Library, LogOut, Settings } from 'lucide-react';
+import { Brain, BookOpen, Users, FolderHeart, Library, LogOut, Settings, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Navigation() {
@@ -45,13 +45,26 @@ export default function Navigation() {
               </Link>
             ))}
           </div>
-          <button
-            onClick={() => signOut()}
-            className="flex items-center space-x-2 text-base font-medium text-narvik hover:text-fire transition-colors duration-200"
-          >
-            <LogOut size={18} />
-            <span>Déconnexion</span>
-          </button>
+          <div className="flex flex-col items-end">
+            <button
+              onClick={() => signOut()}
+              className="flex items-center space-x-2 text-base font-medium text-narvik hover:text-fire transition-colors duration-200"
+            >
+              <LogOut size={18} />
+              <span>Déconnexion</span>
+            </button>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm text-eagle">
+                {user?.email}
+              </span>
+              {isAdmin && (
+                <div className="flex items-center gap-1 px-2 py-0.5 bg-fire/20 rounded-full">
+                  <Shield size={12} className="text-fire" />
+                  <span className="text-xs font-medium text-fire">Admin</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </nav>

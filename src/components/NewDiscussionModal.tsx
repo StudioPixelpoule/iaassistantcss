@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Loader2, AlertCircle } from 'lucide-react';
 
 interface NewDiscussionModalProps {
   onClose: () => void;
@@ -13,15 +13,22 @@ export default function NewDiscussionModal({ onClose, onSubmit }: NewDiscussionM
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
+    if (!title.trim() || !content.trim()) {
+      setError('Le titre et le contenu sont requis');
+      return;
+    }
 
     try {
+      setError(null);
       setIsSubmitting(true);
-      await onSubmit(title, content, tags);
+      await onSubmit(title.trim(), content.trim(), tags);
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setIsSubmitting(false);
     }
@@ -57,6 +64,13 @@ export default function NewDiscussionModal({ onClose, onSubmit }: NewDiscussionM
             <X size={20} />
           </button>
         </div>
+
+        {error && (
+          <div className="bg-erie rounded-lg border border-sorbus/20 p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="text-sorbus shrink-0" size={20} />
+            <p className="text-sorbus text-sm">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -131,9 +145,16 @@ export default function NewDiscussionModal({ onClose, onSubmit }: NewDiscussionM
             <button
               type="submit"
               disabled={isSubmitting}
-              className="uber-button disabled:opacity-50"
+              className="uber-button disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Publication...' : 'Publier'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={20} className="animate-spin mr-2" />
+                  Publication...
+                </>
+              ) : (
+                'Publier'
+              )}
             </button>
           </div>
         </form>

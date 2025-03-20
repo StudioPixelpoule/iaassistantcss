@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Users, MessageSquare, Share2, Star, Filter, Search, Sparkles, Clock, ArrowUp, X } from 'lucide-react';
 import { useDiscussions } from '../hooks/useDiscussions';
 import NewDiscussionModal from '../components/NewDiscussionModal';
+import DiscussionReplies from '../components/DiscussionReplies';
 import { useAuth } from '../contexts/AuthContext';
 import type { Discussion } from '../types/database.types';
 
@@ -24,7 +25,7 @@ const sortOptions = [
 ];
 
 export default function Collaborative() {
-  const { discussions, loading, error, createDiscussion, toggleReaction } = useDiscussions();
+  const { discussions, loading, error, createDiscussion, toggleReaction, hasUserReaction, addReply } = useDiscussions();
   const { user } = useAuth();
   
   const [selectedFilter, setSelectedFilter] = useState("Tous les sujets");
@@ -32,6 +33,7 @@ export default function Collaborative() {
   const [sortBy, setSortBy] = useState('recent');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showNewDiscussionModal, setShowNewDiscussionModal] = useState(false);
+  const [selectedDiscussion, setSelectedDiscussion] = useState<Discussion | null>(null);
 
   // Scroll to top handler
   const scrollToTop = () => {
@@ -71,10 +73,10 @@ export default function Collaborative() {
     // Apply sorting
     switch (sortBy) {
       case 'popular':
-        filtered.sort((a, b) => (b.reactions_count || 0) - (a.reactions_count || 0));
+        filtered.sort((a, b) => ((b.reactions_count as any)?.count || 0) - ((a.reactions_count as any)?.count || 0));
         break;
       case 'discussed':
-        filtered.sort((a, b) => (b.replies_count || 0) - (a.replies_count || 0));
+        filtered.sort((a, b) => ((b.replies_count as any)?.count || 0) - ((a.replies_count as any)?.count || 0));
         break;
       default: // 'recent'
         filtered.sort((a, b) => 
@@ -88,6 +90,11 @@ export default function Collaborative() {
   const handleCreateDiscussion = async (title: string, content: string, tags: string[]) => {
     await createDiscussion(title, content, tags);
     setShowNewDiscussionModal(false);
+  };
+
+  const handleReply = async (content: string) => {
+    if (!selectedDiscussion) return;
+    await addReply(selectedDiscussion.id, content);
   };
 
   if (error) {
@@ -210,7 +217,7 @@ export default function Collaborative() {
                         Nouveau
                       </span>
                     )}
-                    {(discussion.reactions_count || 0) > 10 && (
+                    {((discussion.reactions_count as any)?.count || 0) > 10 && (
                       <span className="px-2 py-1 bg-jaffa/20 text-jaffa text-xs font-medium rounded-full">
                         Populaire
                       </span>
@@ -219,10 +226,12 @@ export default function Collaborative() {
                   <p className="text-eagle/80 line-clamp-2">{discussion.content}</p>
                 </div>
                 <button 
-                  className="text-eagle hover:text-fire transition-colors duration-200 ml-4"
+                  className={`text-eagle hover:text-fire transition-colors duration-200 ml-4 ${
+                    hasUserReaction(discussion, 'star') ? 'text-fire' : ''
+                  }`}
                   onClick={() => toggleReaction(discussion.id, 'star')}
                 >
-                  <Star size={18} />
+                  <Star size={18} className={hasUserReaction(discussion, 'star') ? 'fill-current' : ''} />
                 </button>
               </div>
               
@@ -241,7 +250,7 @@ export default function Collaborative() {
                 <div className="flex items-center gap-4 text-eagle">
                   <div className="flex items-center gap-2">
                     <Users size={16} />
-                    <span>{discussion.profile?.full_name}</span>
+                    <span>{discussion.profile?.email}</span>
                   </div>
                   <span className="text-eagle/60">
                     {new Date(discussion.created_at).toLocaleDateString()}
@@ -249,13 +258,16 @@ export default function Collaborative() {
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-eagle">
+                  <button
+                    onClick={() => setSelectedDiscussion(discussion)}
+                    className="flex items-center gap-2 px-4 py-2 bg-erie rounded-lg text-eagle hover:text-fire transition-colors duration-200"
+                  >
                     <MessageSquare size={16} />
-                    <span>{discussion.replies_count || 0}</span>
-                  </div>
+                    <span>{(discussion.replies_count as any)?.count || 0} réponses</span>
+                  </button>
                   <div className="flex items-center gap-2 text-eagle">
                     <Share2 size={16} />
-                    <span>{discussion.reactions_count || 0}</span>
+                    <span>{(discussion.reactions_count as any)?.count || 0}</span>
                   </div>
                 </div>
               </div>
@@ -276,11 +288,19 @@ export default function Collaborative() {
         <ArrowUp size={20} />
       </motion.button>
 
-      {/* New Discussion Modal */}
+      {/* Modals */}
       {showNewDiscussionModal && (
         <NewDiscussionModal
           onClose={() => setShowNewDiscussionModal(false)}
           onSubmit={handleCreateDiscussion}
+        />
+      )}
+
+      {selectedDiscussion && (
+        <DiscussionReplies
+          discussion={selectedDiscussion}
+          onClose={() => setSelectedDiscussion(null)}
+          onReply={handleReply}
         />
       )}
     </div>

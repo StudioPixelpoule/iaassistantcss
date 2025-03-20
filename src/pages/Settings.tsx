@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Users, Database, Shield, AlertCircle, Upload } from 'lucide-react';
+import { Settings as SettingsIcon, Users, Database, Shield, AlertCircle, Upload, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import UserManagement from '../components/UserManagement';
 import ResourceUpload from '../components/ResourceUpload';
+import CollaborativeSettings from '../components/CollaborativeSettings';
 
 export default function Settings() {
   const { user } = useAuth();
   const metadata = user?.user_metadata;
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showResourceUpload, setShowResourceUpload] = useState(false);
+  const [showCollaborativeSettings, setShowCollaborativeSettings] = useState(false);
 
   // Redirect non-admin users
   if (!metadata?.is_admin) {
@@ -80,7 +82,7 @@ export default function Settings() {
           </button>
         </motion.div>
 
-        {/* Sécurité */}
+        {/* Espace collaboratif */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -88,16 +90,19 @@ export default function Settings() {
           className="bg-[#2B2B2A] rounded-xl p-8 border border-eagle/10"
         >
           <div className="p-3 bg-erie rounded-xl w-fit mb-6 border border-eagle/10">
-            <Shield size={24} className="text-fire" />
+            <MessageSquare size={24} className="text-fire" />
           </div>
           <h2 className="text-2xl font-medium text-narvik mb-4">
-            Sécurité
+            Espace collaboratif
           </h2>
           <p className="text-eagle/80 mb-6">
-            Configurez les paramètres de sécurité et d'authentification
+            Gérez les discussions, les tags et la modération
           </p>
-          <button className="uber-button w-full">
-            Paramètres de sécurité
+          <button 
+            className="uber-button w-full"
+            onClick={() => setShowCollaborativeSettings(true)}
+          >
+            Gérer les discussions
           </button>
         </motion.div>
       </div>
@@ -128,6 +133,9 @@ export default function Settings() {
       )}
       {showResourceUpload && (
         <ResourceUpload onClose={() => setShowResourceUpload(false)} />
+      )}
+      {showCollaborativeSettings && (
+        <CollaborativeSettings onClose={() => setShowCollaborativeSettings(false)} />
       )}
     </div>
   );
